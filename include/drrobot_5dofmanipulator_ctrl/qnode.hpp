@@ -1,0 +1,85 @@
+/**
+ * @file /include/dri_jaguar_arm_ctrl/qnode.hpp
+ *
+ * @brief Communications central!
+ *
+ * @date February 2016
+ **/
+/*****************************************************************************
+** Ifdefs
+*****************************************************************************/
+
+#ifndef drrobot_5dofmanipulator_ctrl_QNODE_HPP_
+#define drrobot_5dofmanipulator_ctrl_QNODE_HPP_
+
+/*****************************************************************************
+** Includes
+*****************************************************************************/
+
+#include <ros/ros.h>
+#include <string>
+#include <QThread>
+#include <QStringListModel>
+#include <drrobot_5dofmanipulator_ctrl/MotorCmd.h>
+#include <drrobot_5dofmanipulator_ctrl/JointAngleCmd.h>
+#include <drrobot_5dofmanipulator_ctrl/ArmPositionCmd.h>
+/*****************************************************************************
+** Namespaces
+*****************************************************************************/
+
+namespace drrobot_5dofmanipulator_ctrl {
+
+/*****************************************************************************
+** Class
+*****************************************************************************/
+
+class QNode : public QThread {
+    Q_OBJECT
+public:
+	QNode(int argc, char** argv );
+	virtual ~QNode();
+	bool init();
+	bool init(const std::string &master_url, const std::string &host_url);
+	void run();
+	void publisher(int pos[],int vel[],int pwm[], double temp[],double angle[],int len);
+
+	/*********************
+	** Logging
+	**********************/
+	enum LogLevel {
+	         Debug,
+	         Info,
+	         Warn,
+	         Error,
+	         Fatal
+	 };
+
+	QStringListModel* loggingModel() { return &logging_model; }
+	void log( const LogLevel &level, const std::string &msg);
+
+signals:
+	void loggingUpdated();
+    	void rosShutdown();
+	void cmdUpdated(int,int,int);
+  void jointAngleCmdUpdated(int,double);
+  void armPosCmdUpdated(double,double,double);
+
+private:
+	int init_argc;
+	char** init_argv;
+	ros::Publisher motorInfo_pub_;
+	ros::Subscriber motor_cmd_sub_;
+	ros::Subscriber joint_angle_cmd_sub_;
+	ros::Subscriber arm_position_cmd_sub_;
+	int msgCnt;
+    	QStringListModel logging_model;
+	void cmdReceived(const drrobot_5dofmanipulator_ctrl::MotorCmd::ConstPtr& cmd);
+   void jointAngleCmdReceived(const drrobot_5dofmanipulator_ctrl::JointAngleCmd::ConstPtr& cmd);
+   void armPosCmdReceived(const drrobot_5dofmanipulator_ctrl::ArmPositionCmd::ConstPtr& cmd);
+
+    
+};
+
+}  // namespace drrobot_5dofmanipulator_ctrl
+
+#endif /* drrobot_5dofmanipulator_ctrl_QNODE_HPP_ */
